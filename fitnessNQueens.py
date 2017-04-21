@@ -3,7 +3,7 @@ import random
 import numpy as np
 from sklearn.utils import shuffle
 
-_poputalion = 100
+_population = 10
 
 _offspring = 2
 
@@ -11,7 +11,12 @@ _N = 8
 
 _expo = 3
 
-_halt = 10
+_halt = 10000
+
+_mutationProb = 0.4
+
+_recombinationProb = 0.9
+
 
 def int_list_to_bits(int_list, m):
     bits = ''
@@ -84,8 +89,88 @@ def hasSolution(population,fenotype, fitness, g):
             aux = list(population[i[0]])
             aux[1] = 1
             population[i[0]] = tuple(aux) #marca como solucao
+            #print population[i[0]]
             result.append((g,fenotype[i[0]]))
+        #elif i[1] == 1:
+            #print 'foi modificado'
+            #print population[i[0]]
     return result
+
+def listElementsIndex(population, index):
+
+    result = []
+
+    for i in index:
+        result.append(population[i])
+
+    return result
+
+#return the position of parent1 and parent2 in population
+def tournament(poputalion, numberIndividuals):
+
+    #choice 5 elements randomly
+    positions = random.sample(range(0,_population), numberIndividuals)
+
+    #get the subset of population by positions
+    positions = listElementsIndex(population, positions)
+    #print 'positions:' + str(positions)
+    fenotype = []
+    for i in positions:
+        fenotype.append(bits_to_int_list(i[0],_expo))
+    #print fenotype
+    fitness = fitnessPopulation(fenotype)
+
+    fitness.sort(key = lambda x: x[1], reverse = True)
+
+    return positions[fitness[0][0]][0], positions[fitness[1][0]][0]
+
+def recombination(parent1, parent2):
+    dimension = len(parent1)
+    point = random.randint(1, dimension-1)
+    subparents1 = [parent1[:point], parent1[point:]]
+    subparents2 = [parent2[:point], parent2[point:]]
+    child1 = subparents1[0] + subparents2[1]
+    child2 = subparents2[0] + subparents1[1]
+    offspring = [child1, child2]
+
+    return child1, child2
+
+def mutation(a):
+    #Randomly select two indexs
+    index = random.sample(range(0,len(a) -1), 2)
+    #Permutation between two genes
+    result = ''
+    for i in range(0,len(a)):
+        if i == index[0]:
+            result += a[index[1]]
+        elif i == index[1]:
+            result += a[index[0]]
+        else:
+            result += a[i]
+    return result
+
+def survivalSelection(population, n):
+	#First, we sorted the population according fitness
+	#get fenotype
+    fenotype = []
+    for element in population:
+        fenotype.append(bits_to_int_list(element[0],_expo))
+
+    fitness = fitnessPopulation(fenotype)
+
+    fitness.sort(key=lambda x: x[1])
+
+	#So, we remove the n worst population elements
+    aux = []
+    for i in range(0,n):
+        aux.append(fitness[i][0])
+
+    aux.sort(reverse = True)
+    i = 0
+    while i < n:
+        #print population[aux[i]]
+        del population[aux[i]]
+        i += 1
 
 def geneticAlgorithm(population,fenotype):
 
@@ -99,8 +184,55 @@ def geneticAlgorithm(population,fenotype):
 
     solutions.extend(hasSolution(population,fenotype,fitness,generation))
 
+    #print solutions
+    while generation < _halt:
+
+        generation += 1
+        #choice parents
+        parent1, parent2 = tournament(population,5)
+
+        #apply crossover
+        aux = random.randint(0,100)
+        if aux <= 100*_recombinationProb:
+            child1, child2 = recombination(parent1,parent2)
+        else:
+            child1,child2 = parent1,parent2
+
+        #apply mutation
+        aux = random.randint(0,100)
+        if aux <= 100*_mutationProb:
+            child1 = mutation(child1)
+
+        aux = random.randint(0,100)
+        if aux <= 100*_mutationProb:
+            child2 = mutation(child2)
+
+        #add the children in population
+        population.append((child1,0))
+        population.append((child2,0))
+
+        #get the survivors
+        survivalSelection(population, 2)
+
+        #get the solutions of this generation
+        #get fenotype
+        fenotype = []
+        for element in population:
+            fenotype.append(bits_to_int_list(element[0],_expo))
+
+        fitness = fitnessPopulation(fenotype)
+
+        fitness.sort(key=lambda x: x[1], reverse = True)
+
+        solutions.extend(hasSolution(population,fenotype,fitness,generation))
+
+        if len(solutions) == _population:
+            break
+
+    print population
     print solutions
-    
+    if len(solutions) == 0:
+        print 'Nao obteve sucesso'
 
 
 if __name__ == '__main__':
@@ -110,7 +242,7 @@ if __name__ == '__main__':
 
     i = 0
     #inicializando a populacao
-    while i < _poputalion:
+    while i < _population:
         individual =  random.sample(range(0,_N), _N)
         if individual not in fenotype:
             fenotype.append(individual)
