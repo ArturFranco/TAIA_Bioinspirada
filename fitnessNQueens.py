@@ -3,7 +3,7 @@ import random
 import numpy as np
 from sklearn.utils import shuffle
 
-_population = 10
+_population = 100
 
 _offspring = 2
 
@@ -90,7 +90,7 @@ def hasSolution(population,fenotype, fitness, g):
             aux[1] = 1
             population[i[0]] = tuple(aux) #marca como solucao
             #print population[i[0]]
-            result.append((g,fenotype[i[0]]))
+            result.append((g,fenotype[i[0]],population[i[0]][2]))
         #elif i[1] == 1:
             #print 'foi modificado'
             #print population[i[0]]
@@ -190,11 +190,17 @@ def geneticAlgorithm(population,fenotype):
         generation += 1
         #choice parents
         parent1, parent2 = tournament(population,5)
-
+        typeSolution1 = 0
+        typeSolution2 = 0
         #apply crossover
         aux = random.randint(0,100)
         if aux <= 100*_recombinationProb:
             child1, child2 = recombination(parent1,parent2)
+            #verify if child1 and child2 are solutions
+            if NumberCollisions(bits_to_int_list(child1,_expo)) == 0:
+                typeSolution1 = 1
+            elif NumberCollisions(bits_to_int_list(child2,_expo)) == 0:
+                typeSolution2 = 1
         else:
             child1,child2 = parent1,parent2
 
@@ -202,29 +208,36 @@ def geneticAlgorithm(population,fenotype):
         aux = random.randint(0,100)
         if aux <= 100*_mutationProb:
             child1 = mutation(child1)
+            typeSolution1 = 0
+            #verify if child1 is solution
+            if NumberCollisions(bits_to_int_list(child1,_expo)) == 0:
+                typeSolution1 = 2
 
         aux = random.randint(0,100)
         if aux <= 100*_mutationProb:
             child2 = mutation(child2)
+            typeSolution2 = 0
+            #verify if child2 is solution
+            if NumberCollisions(bits_to_int_list(child2,_expo)) == 0:
+                typeSolution2 = 2
 
-        #add the children in population
-        population.append((child1,0))
-        population.append((child2,0))
+        #add the children in population and get the solutions
+        if NumberCollisions(bits_to_int_list(child1,_expo)) == 0:
+            population.append((child1,1,typeSolution1))
+            solutions.append((generation,bits_to_int_list(child1,_expo),typeSolution1))
+            #print solutions
+        else:
+            population.append((child1,0,0))
+
+        if NumberCollisions(bits_to_int_list(child2,_expo)) == 0:
+            population.append((child2,1,typeSolution2))
+            solutions.append((generation,bits_to_int_list(child2,_expo),typeSolution2))
+            #print solutions
+        else:
+            population.append((child2,0,0))
 
         #get the survivors
         survivalSelection(population, 2)
-
-        #get the solutions of this generation
-        #get fenotype
-        fenotype = []
-        for element in population:
-            fenotype.append(bits_to_int_list(element[0],_expo))
-
-        fitness = fitnessPopulation(fenotype)
-
-        fitness.sort(key=lambda x: x[1], reverse = True)
-
-        solutions.extend(hasSolution(population,fenotype,fitness,generation))
 
         if len(solutions) == _population:
             break
@@ -234,7 +247,6 @@ def geneticAlgorithm(population,fenotype):
     if len(solutions) == 0:
         print 'Nao obteve sucesso'
 
-
 if __name__ == '__main__':
 
     population = []
@@ -242,13 +254,15 @@ if __name__ == '__main__':
 
     i = 0
     #inicializando a populacao
+    #for force a quick solution->while i < _population-1:
     while i < _population:
         individual =  random.sample(range(0,_N), _N)
         if individual not in fenotype:
             fenotype.append(individual)
             i += 1
+    #for force a quick solution->fenotype.append([5,2,4,7,0,3,1,6])
     #colocando os individuos na populacao, em string binaria
     for element in fenotype:
-        population.append((int_list_to_bits(element,_expo),0))
+        population.append((int_list_to_bits(element,_expo),0,0))
 
     geneticAlgorithm(population, fenotype)
