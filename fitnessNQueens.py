@@ -3,6 +3,7 @@ import random
 import numpy as np
 from sklearn.utils import shuffle
 import measure_algorithm as ma
+import time
 
 _population = 100
 _offspring = 2
@@ -11,7 +12,7 @@ _expo = 3
 _halt = 10000
 _mutationProb = 0.4
 _recombinationProb = 0.9
-_stop = 0
+__DEBUG = 1
 
 def int_list_to_bits(int_list, m):
     bits = ''
@@ -87,11 +88,8 @@ def hasSolution(population,fenotype, fitness, g):
             aux = list(population[i[0]])
             aux[1] = 1
             population[i[0]] = tuple(aux) #marca como solucao
-            #print population[i[0]]
             result.append((g,fenotype[i[0]],population[i[0]][2]))
-        #elif i[1] == 1:
-            #print 'foi modificado'
-            #print population[i[0]]
+
     return result
 
 def listElementsIndex(population, index):
@@ -108,12 +106,11 @@ def tournament(poputalion, numberIndividuals):
     positions = random.sample(range(0,_population), numberIndividuals)
     #get the subset of population by positions
     positions = listElementsIndex(population, positions)
-    #print 'positions:' + str(positions)
     
     fenotype = []
     for i in positions:
         fenotype.append(bits_to_int_list(i[0],_expo))
-    #print fenotype
+
     fitness = fitnessPopulation(fenotype)
     fitness.sort(key = lambda x: x[1], reverse = True)
 
@@ -162,20 +159,24 @@ def survivalSelection(population, n):
     aux.sort(reverse = True)
     i = 0
     while i < n:
-        #print population[aux[i]]
         del population[aux[i]]
         i += 1
 
 def geneticAlgorithm(population,fenotype):
+    generation  = 1
+    solutions   = []
+    fit     = fitnessPopulation(fenotype)
+    fit.sort(key=lambda x: x[1], reverse = True)
+    solutions.extend(hasSolution(population,fenotype,fit,generation))
+    fitness     = []
 
-    generation = 1
-    solutions = []
-    fitness = fitnessPopulation(fenotype)
-    fitness.sort(key=lambda x: x[1], reverse = True)
-    solutions.extend(hasSolution(population,fenotype,fitness,generation))
-
+    #Fitness, iteration = 0
+    temp = []
+    for i, l in enumerate(fit):
+        temp.append(l[1])
+    fitness.append(temp)
+    
     while (generation < _halt) and (len(solutions) < _population):
-
         generation += 1
         #choice parents
         parent1, parent2 = tournament(population,5)
@@ -228,18 +229,26 @@ def geneticAlgorithm(population,fenotype):
         #get the survivors
         survivalSelection(population, 2)
 
-        if len(solutions) == _population:
-            _stop = 1
+        fenotype = []
+        for element in population:
+            fenotype.append(bits_to_int_list(element[0],_expo))
+
+        fit     = fitnessPopulation(fenotype)
+        temp    = []
+        for i, l in enumerate(fit):
+            temp.append(l[1])
+        fitness.append(temp)
 
     if len(solutions) == 0:
         print 'Nao obteve sucesso'
 
-    return solutions, population
+    return solutions, population, fitness
 
 if __name__ == '__main__':
     population = []
     fenotype   = []
     solutions  = []
+    statistics = []
     i = 0
 
     #for force a quick solution->while i < _population-1:
@@ -249,42 +258,38 @@ if __name__ == '__main__':
             fenotype.append(individual)
             i += 1
 
-    # fenotype.append([5,2,4,7,0,3,1,6])
+    fenotype.append([5,2,4,7,0,3,1,6])
     for element in fenotype:
         population.append((int_list_to_bits(element,_expo),0,0))
 
-    solutions, population = geneticAlgorithm(population, fenotype)
-    fenotype = []
+    solutions, population, statistics = geneticAlgorithm(population, fenotype)
 
-    #Measure algorithm
-    if len(solutions) > 0:
-        ma.graph_type(solutions)
-        ma.evolution_population(solutions, _halt)
+    if __DEBUG:
+        fenotype = []
 
-        for element in solutions:
-            fenotype.append(element[1])
+        #Measure algorithm
+        if len(solutions) > 0:
+            ma.graph_type(solutions)
+            ma.evolution_population(solutions, _halt)
 
-        fitness = fitnessPopulation(fenotype)
-        ma.plot_fitness(fitness, "Solutions")
+            fit = []
+            for i, l in enumerate(statistics):
+                fit.append(np.mean(l))
+            ma.plot_fitness(fit, "Fitness by iteration: Population")
 
-    else: #Don't have any solution
-        if not _stop:
-            no_solutions = []
-            no_solutions = ma.no_solutions(population, solutions)
+            for element in solutions:
+                fenotype.append(element[1])
 
-            if len(no_solutions) != 0:
-                for element in no_solutions:
-                    # print element, "no"
-                    fenotype.append(bits_to_int_list(element[0],_expo))
+            fitness = fitnessPopulation(fenotype)
+            ma.config_individual(fenotype[fitness.index(max(fitness))])
+        else: #Don't have any solution
+            fit = []
+            for i, l in enumerate(statistics):
+                fit.append(np.mean(l))
+            ma.plot_fitness(fit, "Fitness by iteration")
 
-                fitness = fitnessPopulation(fenotype)
-                ma.plot_fitness(fitness, "No Solutions")
-
-        else:
             for element in population:
                 fenotype.append(bits_to_int_list(element[0],_expo))
-
             fitness = fitnessPopulation(fenotype)
             #The best of the worst
             ma.config_individual(fenotype[fitness.index(max(fitness))])
-            ma.plot_fitness(fitness, "Population")

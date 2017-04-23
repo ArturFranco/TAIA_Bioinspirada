@@ -4,7 +4,6 @@ import plotly.plotly as py
 import numpy as np
 
 def graph_type(solutions):
-
 # Data to plot
 	labels = 'Mutation', 'Crossover', 'Randomly'
 	sizes = [0,0,0]
@@ -33,56 +32,54 @@ def config_individual(individual):
 	for i in xrange(len(grid)):
 		grid[i][individual[i]] = 1
 
-	row_labels = range(nrows)
 	col_labels = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
-	plt.matshow(grid, cmap = plt.get_cmap('Greys'), interpolation = 'none')
-	plt.xticks(range(ncols), col_labels)
-	plt.yticks(range(nrows), row_labels)
+
+	plt.figure()
+	im = plt.imshow(grid, cmap = plt.get_cmap('Greys'),
+	                interpolation = 'none', vmin = 0, vmax = 1,  aspect ='equal');
+	ax = plt.gca();
+	ax = plt.gca();
+
+	# Major ticks
+	ax.set_xticks(np.arange(0, nrows, 1));
+	ax.set_yticks(np.arange(0, ncols, 1));
+
+	# Labels for major ticks
+	ax.set_xticklabels(col_labels);
+	ax.set_yticklabels(np.arange(1, nrows+1, 1));
+
+	# Minor ticks
+	ax.set_xticks(np.arange(-.5, ncols, 1), minor=True);
+	ax.set_yticks(np.arange(-.5, nrows, 1), minor=True);
+
+	# Gridlines based on minor ticks
+	ax.grid(which = 'minor', color = 'black', linestyle = '--', linewidth = 1)
 	subtitle_string = (" ".join(str(x) for x in individual))
 	plt.suptitle("Best Individual", y = 0.99, fontsize = 17)
 	plt.title(subtitle_string, fontsize = 8)
 	plt.show()
 
 def evolution_population(solutions, _halts):
-	print len(solutions)
-
 	x = range(len(solutions))
 	y = []
 
 	for i, l in enumerate(solutions):
 		y.append(l[0])
 
-	plt.plot(x, y, 'ro')
+	plt.plot(x, y, 'bo', linewidth = 2)
+	plt.title("Convergence")
+	plt.ylabel("Iterations")
+	plt.xlabel("Individuals")
 	plt.axis([0, len(solutions), 0, _halts])
 	plt.show()
 
-def no_solutions(population, solutions):
-	no_solutions = []
-
-	if len(solutions) == 0:
-		return population
-
-	else:	
-		for i, sol in enumerate(population):
-			for j, pop in enumerate(population):
-				if pop[0] is not sol[1]:
-					no_solutions.append(pop[0])
-
-	return no_solutions
-
-def plot_fitness(fitness, title):
-	x = []
-
-	for i, l in enumerate(fitness):
-		# print l[1], "f"
-		x.append(l[1])
-
-	plt.plot(x)
+def plot_fitness(mean, title):
+	plt.plot(range(len(mean)), mean, 'r-', linewidth = 2)
 	plt.ylabel('Fitness')
-	plt.xlim((0,len(fitness)))
-	plt.ylim((0,1.5))
+	plt.xlabel("Iteration")
+	plt.yticks([min(mean), max(mean)])
 	plt.title(title)
 	plt.show()
 
 # if __name__ == '__main__':
-	# graph_config_individual([5,2,4,7,0,3,1,6])
+	# config_individual([5,2,4,7,0,3,1,6])
