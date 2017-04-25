@@ -9,10 +9,10 @@ _population = 100
 _offspring = 2
 _N = 8
 _expo = 3
-_halt = 1000
+_halt = 10000
 _mutationProb = 0.4
 _recombinationProb = 0.9
-__DEBUG = 1
+__DEBUG = 0
 
 def int_list_to_bits(int_list, m):
     bits = ''
@@ -76,7 +76,7 @@ def fitnessPopulation(population):
     fitness = []
     for i in range(0,len(population)):
         collisions = NumberCollisions(population[i])
-        fitness.append((i,1.0/(1+collisions)))
+        fitness.append([i,1.0/(1+collisions)])
     return fitness
 
 def hasSolution(population,fenotype, fitness, g):
@@ -86,8 +86,7 @@ def hasSolution(population,fenotype, fitness, g):
             aux = list(population[i[0]])
             aux[1] = 1
             population[i[0]] = tuple(aux) #marca como solucao
-            result.append((g,fenotype[i[0]],population[i[0]][2]))
-
+            result.append([g,fenotype[i[0]],population[i[0]][2]])
     return result
 
 def listElementsIndex(population, index):
@@ -178,10 +177,9 @@ def order_crossover(parent1, parent2):
 def alternative_crossover(parent1, parent2):
     parent1 = bits_to_int_list(parent1, _expo)
     parent2 = bits_to_int_list(parent2, _expo)
-    index = random.randint(1,_dimension_-1)
-    print(index)
-    child1 = parent1[:index]
-    child2 = parent2[:index]
+    index   = random.randint(1,_N-1)
+    child1  = parent1[:index]
+    child2  = parent2[:index]
 
     for i in range(_N):
         if parent2[i] not in child1:
@@ -226,8 +224,8 @@ def mutation_Fenotype(a):
 def inversion_mutation(child):
     child  = bits_to_int_list(child, _expo)
 
-    index1 = random.randint(0,_dimension_-1)
-    index2 = random.randint(index1+1, _dimension_)
+    index1 = random.randint(0,_N-1)
+    index2 = random.randint(index1+1, _N)
     subchild = child[index1:index2]
     subchild = subchild[::-1]
     child = child[:index1] + subchild + child[index2:]
@@ -262,10 +260,16 @@ def survival_replacement_selection(population, parents, childs):
 
     for i in range(0,len(population)-1):
         if(count1 == 0 and (population[i][0] == parents[0])):
-            population[i][0] = childs[0]
+            aux = list(population[i])
+            aux[0] = childs[0]
+            population[i] = tuple(aux) #marca como solucao
+            # population[i][0] = childs[0]
             count1 += 1
         elif(count2 == 0 and (population[i][0] == parents[1])):
-            population[i][0] = childs[1]
+            aux = list(population[i])
+            aux[0] = childs[1]
+            population[i] = tuple(aux) #marca como solucao
+            # population[i][0] = childs[1]
             count2 +=1
         elif(count1 == 1 and count2 == 1):
             break
@@ -274,7 +278,7 @@ def survival_replacement_selection(population, parents, childs):
 def geneticAlgorithm(population,fenotype, types):
     generation  = 1
     solutions   = []
-    fit     = fitnessPopulation(fenotype)
+    fit         = fitnessPopulation(fenotype)
     fit.sort(key=lambda x: x[1], reverse = True)
     solutions.extend(hasSolution(population,fenotype,fit,generation))
     fitness     = []
@@ -316,8 +320,6 @@ def geneticAlgorithm(population,fenotype, types):
         else:
             child1,child2 = parent1,parent2
 
-        if(types[2] == 2): survival_replacement_selection([parent1,parent2], [child1, child2])
-
         #apply mutation
         aux = random.randint(0,100)
         if aux <= 100*_mutationProb:
@@ -350,21 +352,22 @@ def geneticAlgorithm(population,fenotype, types):
 
         #add the children in population and get the solutions
         if NumberCollisions(bits_to_int_list(child1,_expo)) == 0:
-            population.append((child1,1,typeSolution1))
+            population.append([child1,1,typeSolution1])
             if len(solutions) < _population:
-                solutions.append((generation,bits_to_int_list(child1,_expo),typeSolution1))
+                solutions.append([generation,bits_to_int_list(child1,_expo),typeSolution1])
         else:
-            population.append((child1,0,0))
+            population.append([child1,0,0])
 
         if NumberCollisions(bits_to_int_list(child2,_expo)) == 0:
-            population.append((child2,1,typeSolution2))
+            population.append([child2,1,typeSolution2])
             if len(solutions) < _population:
-                solutions.append((generation,bits_to_int_list(child2,_expo),typeSolution2))
+                solutions.append([generation,bits_to_int_list(child2,_expo),typeSolution2])
         else:
-            population.append((child2,0,0))
+            population.append([child2,0,0])
 
         #get the survivors
         if(types[2] == 1): survival_fitness_selection(population, _offspring)
+        elif(types[2] == 2): survival_replacement_selection(population, [parent1,parent2], [child1, child2])
 
         fenotype = []
         for element in population:
@@ -376,40 +379,36 @@ def geneticAlgorithm(population,fenotype, types):
             temp.append(l[1])
         fitness.append(temp)
 
-    if len(solutions) == 0:
-        print 'Nao obteve sucesso'
-
     return solutions, population, fitness
 
 if __name__ == '__main__':
-    population = []
-    fenotype   = []
     solutions  = []
     statistics = []
-    i = 0
 
     #for force a quick solution->while i < _population-1:
-    while i < _population:
-        individual =  random.sample(range(0,_N), _N)
-        if individual not in fenotype:
-            fenotype.append(individual)
-            i += 1
+    for i in range(1,4): #Mutation
+        for j in range(1, 4): #Crossover
+            if (i == 1) and ((j == 2) or (j == 3)): break
+            for t in range(1,3): #Survival Selection
+                for u in range(1,3): #Parents Selection
+                    f = 0
+                    fenotype   = []
+                    while f < _population:
+                        individual =  random.sample(range(0,_N), _N)
+                        if individual not in fenotype:
+                            fenotype.append(individual)
+                            f += 1
 
-    # fenotype.append([5,2,4,7,0,3,1,6])
-    for element in fenotype:
-        population.append((int_list_to_bits(element,_expo),0,0))
+                    population = []
+                    for element in fenotype:
+                        population.append([int_list_to_bits(element,_expo),0,0])
 
-    for i in range(1,3): #Mutation
-        for j in range(1,3): #Crossover
-            for t in range(1,2): #Survival Selection
-                for u in range(1,2): #Parents Selection
                     print i,j,t,u
                     types = [i,j,t,u]
                     solutions, population, statistics = geneticAlgorithm(population, fenotype, types)
 
                     if __DEBUG:
                         fenotype = []
-
                         #Measure algorithm
                         if len(solutions) > 0:
                             if(len(solutions) != _population): "Parou sem todos convergirem"
@@ -427,7 +426,9 @@ if __name__ == '__main__':
 
                             fitness = fitnessPopulation(fenotype)
                             ma.config_individual(fenotype[fitness.index(max(fitness))])
+
                         else: #Don't have any solution
+                            print 'Nao obteve sucesso'
                             fit = []
                             for b, l in enumerate(statistics):
                                 fit.append(np.mean(l))
