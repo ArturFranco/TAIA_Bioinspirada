@@ -418,7 +418,7 @@ if __name__ == '__main__':
                             ma.evolution_population(solutions, _halt)
 
                             fit = []
-                            for i, l in enumerate(statistics):
+                            for a, l in enumerate(statistics):
                                 fit.append(np.mean(l))
                             ma.plot_fitness(fit, "Fitness by iteration: Population")
 
@@ -429,7 +429,7 @@ if __name__ == '__main__':
                             ma.config_individual(fenotype[fitness.index(max(fitness))])
                         else: #Don't have any solution
                             fit = []
-                            for i, l in enumerate(statistics):
+                            for b, l in enumerate(statistics):
                                 fit.append(np.mean(l))
                             ma.plot_fitness(fit, "Fitness by iteration")
 
