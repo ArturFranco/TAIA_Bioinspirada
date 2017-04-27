@@ -7,12 +7,12 @@ import time
 
 _population = 100
 _offspring = 2
-_N = 8
-_expo = 3
+_N = 16
+_expo = 4
 _halt = 10000
 _mutationProb = 0.4
 _recombinationProb = 0.9
-__DEBUG = 0
+__DEBUG = 1
 
 def int_list_to_bits(int_list, m):
     bits = ''
@@ -113,7 +113,7 @@ def tournament(poputalion, numberIndividuals):
 
     return positions[fitness[0][0]][0], positions[fitness[1][0]][0]
 
-def roulette (population, numberIndividuals):
+def roulette (population):
     fenotype = []
     for i in population:
         fenotype.append(bits_to_int_list(i[0],_expo))
@@ -127,13 +127,7 @@ def roulette (population, numberIndividuals):
     for j, chromosome in enumerate(population):
         current += fitness[j][1]
         if current > pick:
-            if(len(parents) != numberIndividuals):
-                parents.append(chromosome[0])
-
-    if len(parents) < numberIndividuals:
-        parents.append(population[0][0])
-
-    return parents[0], parents[1]
+            return chromosome[0]
 
 ##################### CROSSOVER ############################
 def crossover(parent1, parent2):
@@ -296,8 +290,11 @@ def geneticAlgorithm(population,fenotype, types):
         if(types[3] == 1):
             parent1, parent2 = tournament(population,5)
         elif (types[3] == 2):
-            parent1, parent2 = roulette(population,2)
-
+            parent1 = []
+            parent2 = []
+            while(parent1 == parent2):
+                parent1 = roulette(population)
+                parent2 = roulette(population)
         typeSolution1 = 0
         typeSolution2 = 0
 
@@ -425,7 +422,7 @@ if __name__ == '__main__':
                                 fenotype.append(element[1])
 
                             fitness = fitnessPopulation(fenotype)
-                            ma.config_individual(fenotype[fitness.index(max(fitness))])
+                            ma.config_individual(fenotype[fitness.index(max(fitness))], _N)
 
                         else: #Don't have any solution
                             print 'Nao obteve sucesso'
@@ -438,4 +435,4 @@ if __name__ == '__main__':
                                 fenotype.append(bits_to_int_list(element[0],_expo))
                             fitness = fitnessPopulation(fenotype)
                             #The best of the worst
-                            ma.config_individual(fenotype[fitness.index(max(fitness))])
+                            ma.config_individual(fenotype[fitness.index(max(fitness))], _N)

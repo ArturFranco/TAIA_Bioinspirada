@@ -25,9 +25,9 @@ def graph_type(solutions):
 	plt.axis('equal')
 	plt.show()
 
-def config_individual(individual):
+def config_individual(individual, size):
 	grid = [[0]*len(individual) for n in range(len(individual))]
-	nrows, ncols = 8,8
+	nrows, ncols = size, size
 	
 	for i in xrange(len(grid)):
 		grid[i][individual[i]] = 1
