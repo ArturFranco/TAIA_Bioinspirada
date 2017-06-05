@@ -1,6 +1,7 @@
 import numpy  as np
 import random
 from sklearn.utils import shuffle
+
 #Define the size of population
 _population_ = 100
 
