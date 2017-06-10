@@ -6,16 +6,16 @@ import math
 
 # ----- NUTRI INPUTS -----
 
-Kcal = 620
-rateProt = 0.29
-rateCarb = 0.34
-rateLip = 0.34
-rateFib = 0.03
+Kcal = 705
+rateProt = 0.26
+rateCarb = 0.4
+rateLip = 0.30
+rateFib = 0.04
 refeicaoIN = [('ARROZ INTEGRAL COZIDO',100),
-              ('SALMAO SEM PELE FRESCO GRELHADO',100)]
+              ('SALMAO SEM PELE FRESCO GRELHADO',100),
+              ('BATATA INGLESA COZIDA',100)]
 
 # -------------------------
-
 fProt = (Kcal*rateProt)
 fCarb = (Kcal*rateCarb)
 fLip = (Kcal*rateLip)
@@ -24,9 +24,11 @@ fFib = (Kcal*rateFib)
 # -------------------------
 _mesuare = 5.0
 _populationSize = 50
-_haltCondition = 1000
+_haltCondition = 500
 _qtdBits = 6
-_error = 0.1
+_error = 0.05
+_nRecombination = (_populationSize * 7.0)/2.0
+_strategy = 0 #if 1 -> AG else -> EE
 # -------------------------
 alimentos = pd.read_csv('alimentos.csv', sep=';')
 del alimentos['Unnamed: 0']
@@ -43,7 +45,6 @@ def isIn(num,min,max):
 
     if(num >= min and num <= max):
         return True
-
     return False
 
 #    ok
@@ -70,18 +71,24 @@ def foodMaxAmount(food):
 
     return math.floor((maxAmount/_mesuare))*_mesuare
 
+maxArray = []
+for food in refeicaoIN:
+    maxArray.append(foodMaxAmount(food[0]))
+#print maxArray
 #    ok
 def createPopulation(populationSize, refeicaoIN):
     population = []
     i = 0
     while i < populationSize:
         individual = []
+        j = 0
         for food in refeicaoIN:
             qtdMin = food[1]
-            qtdMax = foodMaxAmount(food[0])
+            qtdMax = maxArray[j]
             #print(qtdMin, qtdMax)
             qtd = random.randint(qtdMin/_mesuare, qtdMax/_mesuare)*_mesuare
             individual.append(qtd)
+            j += 1
 
         fit = fitnessIndividual(individual)
         if fit != False:
@@ -145,7 +152,7 @@ def fitnessPopulation(population):
     return fitness
 
 # NAO ENTENDI QUAL EH ESSA SELACAO DE PAIS
-def parentsSelection(population, fitness):
+def parentsSelection1(population, fitness):
 
     maxFitness = sum([fitness[c][1] for c in range(len(population))])
     pick = random.uniform(0, maxFitness)
@@ -156,22 +163,13 @@ def parentsSelection(population, fitness):
         if current > pick:
             return meal
 
-def int_list_to_bits(int_list, m):
-    bits = ''
-    for number in int_list:
-        bits += format(number, '0'+str(m)+'b')
-    return bits
+def parentsSelection2(population):
+    parent1 = random.randint(0, len(population)-1)
+    parent2 = random.randint(0, len(population)-1)
+    while parent1 == parent2:
+        parent2 = random.randint(0, len(population)-1)
 
-def bits_to_int_list(bits, m):
-    n = len(bits)
-    if (n%m == 0):
-        int_list = []
-        for i in range(int(n/m)):
-            bits_sliced = bits[(i*m):((i+1)*m)]
-            number = int(bits_sliced, 2)
-            int_list.append(number)
-        return int_list
-    print("'n' is not divisible by 'm'")
+    return population[parent1], population[parent2]
 
 #   ok
 def coinRecombination(parent1, parent2):
@@ -192,24 +190,6 @@ def coinRecombination(parent1, parent2):
         child2 = parent2
 
     return child1, child2
-
-def mutation1(individual):
-    bitsIndividual = int_list_to_bits(individual, _qtdBits)
-    mutated = ''
-    for bit in bitsIndividual:
-        prob = random.random()
-        if prob < 0.5:
-            mutated += bit
-        else:
-            if bit == '0':
-                mutated += '1'
-            else:
-                mutated += '0'
-
-    mutated = bits_to_int_list(mutated, _qtdBits)
-    mutated = [math.floor(x/_mesuare)*_mesuare for x in mutated]
-
-    return mutated
 
 def defineSize(fit):
 
@@ -236,17 +216,9 @@ def mutation2(individual):
     aux = individual
     for i in range(len(individual)):
         aux[i] = aux[i] + sizeStep
-        if(fitnessIndividual(aux) > (1+_error)):
+        if(fitnessIndividual(aux) > (1+_error) or (aux[i] > maxArray[i])):
             aux[i] = individual[i]
     return aux
-
-def survivalSelection(population, fitness):
-    worsts = sorted(fitness, key=lambda x: x[1])[-2:]
-    for worst in worsts:
-        del fitness[worst[0]]
-        del population[worst[0]]
-
-    return population, fitness
 
 def nearestN(fitness):
     aux = []
@@ -276,6 +248,18 @@ def survivalSelection2(population, fitness,N):
 
     return population, fitness
 
+def survivalSelection3(population,N):
+
+    fitness = fitnessPopulation(population)
+
+    fitness = nearestN(fitness)
+
+    aux = []
+    for i in range(N):
+        aux.append(population[fitness[i][0]])
+
+    return aux
+
 def evolutiveAlgorithm():
 
     population = createPopulation(_populationSize, refeicaoIN)
@@ -286,31 +270,53 @@ def evolutiveAlgorithm():
     i = 0
     while (i < _populationSize and nearestN(fitness)[1] != 1):
 
-        # Parents Selection
-        parent1 = parentsSelection(population, fitness)
-        parent2 = parentsSelection(population, fitness)
-        while parent1 == parent2:
-            parent2 = parentsSelection(population, fitness)
 
-        # Crossover
-        child1, child2 = coinRecombination(parent1, parent2)
+        if(_strategy == 1):
+            # Parents Selection
+            parent1 = parentsSelection1(population, fitness)
+            parent2 = parentsSelection1(population, fitness)
+            while parent1 == parent2:
+                parent2 = parentsSelection1(population, fitness)
 
-        # Mutation
-        child1 = mutation2(child1)
-        child2 = mutation2(child2)
+            # Crossover
+            child1, child2 = coinRecombination(parent1, parent2)
 
-        # Evaluate childs
-        population.append(child1)
-        fitnessChild = (_populationSize, fitnessIndividual(child1))
-        fitness.append(fitnessChild)
-        population.append(child2)
-        fitnessChild = (_populationSize+1, fitnessIndividual(child2))
-        fitness.append(fitnessChild)
+            # Mutation
+            child1 = mutation2(child1)
+            child2 = mutation2(child2)
 
-        # Survival Selection
-        population, fitness = survivalSelection2(population, fitness,2)
+            # Evaluate childs
+            population.append(child1)
+            fitnessChild = (_populationSize, fitnessIndividual(child1))
+            fitness.append(fitnessChild)
+            population.append(child2)
+            fitnessChild = (_populationSize+1, fitnessIndividual(child2))
+            fitness.append(fitnessChild)
 
-        fitness = fitnessPopulation(population)
+            # Survival Selection
+            population, fitness = survivalSelection2(population, fitness,2)
+
+            fitness = fitnessPopulation(population)
+        else:
+            aux = []
+            for i in range(int(_nRecombination)):
+                # Parents Selection
+                parent1 ,parent2 = parentsSelection2(population)
+
+                # Crossover
+                child1, child2 = coinRecombination(parent1, parent2)
+
+                # Mutation
+                child1 = mutation2(child1)
+                child2 = mutation2(child2)
+
+                aux.append(child1)
+                aux.append(child2)
+
+            # Survival Selection
+            population = survivalSelection3(aux, _populationSize)
+
+            fitness = fitnessPopulation(population)
 
         i +=1
 
@@ -332,6 +338,7 @@ if __name__ == '__main__':
     # print coinRecombination([200,150],[130,120])
     # print mutation2([100,100])
     # print survivalSelection2([(0,0.97),(1,1),(2,1.01),(3,1.02),(4,1.03),(5,1.04),(6,1.003),(7,2),(8,0.05),(9,0.95)],[(0,0.97),(1,1),(2,1.01),(3,1.02),(4,1.03),(5,1.04),(6,1.003),(7,2),(8,0.05),(9,0.95)],2)
+
     result = evolutiveAlgorithm()
 
     print('Sua dieta e:')
