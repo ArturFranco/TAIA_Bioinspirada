@@ -27,8 +27,10 @@ _populationSize = 50
 _haltCondition = 500
 _qtdBits = 6
 _error = 0.05
+_pRecombination = 0.6
+_pMutation = 0.4
 _nRecombination = (_populationSize * 7.0)/2.0
-_strategy = 0 #if 1 -> AG else -> EE
+_strategy = 1 #if 1 -> AG else -> EE
 # -------------------------
 alimentos = pd.read_csv('alimentos.csv', sep=';')
 del alimentos['Unnamed: 0']
@@ -270,7 +272,6 @@ def evolutiveAlgorithm():
     i = 0
     while (i < _populationSize and nearestN(fitness)[1] != 1):
 
-
         if(_strategy == 1):
             # Parents Selection
             parent1 = parentsSelection1(population, fitness)
@@ -279,11 +280,14 @@ def evolutiveAlgorithm():
                 parent2 = parentsSelection1(population, fitness)
 
             # Crossover
-            child1, child2 = coinRecombination(parent1, parent2)
+            if(random.randint(0,100) < _pRecombination * 100):
 
-            # Mutation
-            child1 = mutation2(child1)
-            child2 = mutation2(child2)
+                child1, child2 = coinRecombination(parent1, parent2)
+
+                # Mutation
+            if(random.randint(0,100) < _pMutation * 100):
+                child1 = mutation2(child1)
+                child2 = mutation2(child2)
 
             # Evaluate childs
             population.append(child1)
