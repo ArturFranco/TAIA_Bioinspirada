@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 # Python 3+
-import tkinter as tk
+import Tkinter as tk
 # Python 2.7
 #import Tkinter as tk
 import random
@@ -411,39 +411,72 @@ class ScreenOne(tk.Frame):
 
 # Class related to the second screen of the program
 class ScreenTwo(tk.Frame):
-    
     # getting values of the entries and storing in global variables
     # changing to third screen
-    def gettingValues(self, controller):
+    def calcRegimen(self):
         global _refeicaoIN, _foodMaxArray
+
+        for entryFood, entryQtd in zip(self.selection, self.entriesQtd):
+            _refeicaoIN.append((aux['alimento'][entryFood], int(entryQtd.get())))
         
-        for entryFood, entryQtd in zip(self.entriesFood, self.entriesQtd):
-            _refeicaoIN.append((entryFood.get(), int(entryQtd.get())))
-        
-        controller.show_frame("ScreenThree")
-    
-    def addFood(self):
-        global _count
-        _count += 1
-        
-        labelFood = tk.Label(self, text='Food '+str(_count))
-        labelFood.pack(side='top', fill='both', expand=True)
-        labelFood.configure(background='spring green')
-        self.inputFood = tk.Entry(self, justify='center')
-        self.inputFood.pack(side='top', fill='both', expand=True)
-        self.entriesFood.append(self.inputFood)
-        
-        labelQtd = tk.Label(self, text='Min Amount of Food '+str(_count)+' (in grams)')
-        labelQtd.pack(side='top', fill='both', expand=True)
-        labelQtd.configure(background='spring green')
-        self.inputQtd = tk.Entry(self, justify='center')
-        self.inputQtd.pack(side='top', fill='both', expand=True)
-        self.entriesQtd.append(self.inputQtd)
-    
+        self.controller.show_frame("ScreenThree")
+
+    def gettingValues(self, controller):
+        self.selection = []
+
+        self.buttonConfirm.destroy()
+        self.sbFrame.destroy()
+        self.textFrame.destroy()
+
+        for index, b in enumerate(self.entriesFood):
+          if b.get():
+            self.selection.append(index)
+
+        entries = []
+        index   = 0
+        i, j    = 0, 0
+
+        for i in self.selection:
+            label = tk.Label(self, text = "Min Amount of Food " + aux['alimento'][i])
+            label.pack(side='top', fill='both', expand=True)
+            label.configure(background='spring green')
+            self.entriesQtd.append(tk.Entry(self, justify='center'))
+            self.entriesQtd[index].pack(side = 'top', fill='both', expand = True)
+            index += 1
+     
+        getInput = tk.Button(self, width = 20, text = 'Ok', command = self.calcRegimen) # This makes the login button, which will go to the CheckLogin def.
+        getInput.pack(side = 'bottom')
+        getInput.configure(background = 'DarkSeaGreen1')
+
+    def selectFood(self):
+        chkbuttons  = []
+        index       = 0
+
+        self.buttonSelect.destroy()
+        self.buttonConfirm = tk.Button(self, width = 20, text = 'Confirm')
+        self.buttonConfirm['command'] = partial(self.gettingValues, self.controller)
+        self.buttonConfirm.pack(side = 'bottom')
+        self.buttonConfirm.configure(background = 'DarkSeaGreen1')
+
+        self.sbFrame      = tk.Scrollbar(self, orient = "vertical")
+        self.textFrame    = tk.Text(self, width = 15, height = 15, yscrollcommand = self.sbFrame.set)
+        self.sbFrame.config(command = self.textFrame.yview)
+        self.sbFrame.pack(side = "right", fill = "both", expand = False)
+        self.textFrame.pack(side = "left", fill = "both", expand = True)
+
+        for i in aux['alimento']:
+            self.entriesFood.append(tk.BooleanVar())
+            chkbuttons.append(tk.Checkbutton(self, text = i, variable = self.entriesFood[index], font = ('Helvetica', 8)))
+            index += 1
+
+        for cb in chkbuttons:
+            self.textFrame.window_create("end", window = cb)
+            self.textFrame.insert("end", "\n")
+
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
         self.controller = controller
-        self.configure(background='spring green')
+        self.configure(background = 'spring green')
         
         self.entriesFood = []
         self.entriesQtd = []
@@ -454,10 +487,10 @@ class ScreenTwo(tk.Frame):
         bottomEdge = tk.Label(self, height=2)
         bottomEdge.pack(side='bottom', fill='x')
         bottomEdge.configure(background='spring green')
-        rightEdge = tk.Label(self, width=15)
+        rightEdge = tk.Label(self, width=5)
         rightEdge.pack(side='right', fill='y')
         rightEdge.configure(background='spring green')
-        leftEdge = tk.Label(self, width=15)
+        leftEdge = tk.Label(self, width=5)
         leftEdge.pack(side='left', fill='y')
         leftEdge.configure(background='spring green')
 
@@ -466,19 +499,10 @@ class ScreenTwo(tk.Frame):
         labelText.configure(background='spring green')
         labelText.configure(font=("Verdana", 16))
 
-        buttonNext = tk.Button(self, width=20, text='Next')
-        buttonNext['command'] = partial(self.gettingValues, controller)
-        buttonNext.pack(side='bottom')
-        buttonNext.configure(background='DarkSeaGreen1')
-
-        buttonAdd = tk.Button(self, width=20, text='Add Food', command=self.addFood)
-        buttonAdd.pack(side='bottom')
-        buttonAdd.configure(background='DarkSeaGreen1')
-
-        space = tk.Label(self)
-        space.pack(side='bottom', fill='both', expand=True)
-        space.configure(background='spring green')
-
+        self.buttonSelect = tk.Button(self, width = 20, text = 'Next', command = self.selectFood)
+        self.buttonSelect.pack(side = 'bottom')
+        self.buttonSelect.configure(background = 'DarkSeaGreen1')
+    
 # Class related to the third screen of the program
 class ScreenThree(tk.Frame):
     
@@ -512,7 +536,7 @@ class ScreenThree(tk.Frame):
         topEdge = tk.Label(self)
         topEdge.pack(side='top', fill='x')
         topEdge.configure(background='spring green')
-        bottomEdge = tk.Label(self, height=2)
+        bottomEdge = tk.Label(self, height=1)
         bottomEdge.pack(side='bottom', fill='x')
         bottomEdge.configure(background='spring green')
         rightEdge = tk.Label(self, width=15)
@@ -569,11 +593,11 @@ class ScreenThree(tk.Frame):
         self.inputError = tk.Entry(self, justify='center')
         self.inputError.pack(side='top', fill='both', expand=True)
 
-        space = tk.Label(self)
+        space = tk.Label(self, width = 20)
         space.pack(side='top', fill='both', expand=True)
         space.configure(background='spring green')
 
-        buttonSend = tk.Button(self, width=20, text='Send')
+        buttonSend = tk.Button(self, height = 30, width = 20, text='Send', font = ('Helvetica', 8))
         buttonSend['command'] = partial(self.gettingValues, controller)
         buttonSend.pack()
         buttonSend.configure(background='DarkSeaGreen1')
@@ -633,6 +657,8 @@ if __name__ == "__main__":
     _strategy = ''
 
     _nRecombination = 0
+
+    global aux
     
     alimentos = pd.read_csv('alimentos.csv', sep=';')
     del alimentos['Unnamed: 0']
