@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 # Python 3+
-import Tkinter as tk
+import tkinter as tk
 # Python 2.7
 #import Tkinter as tk
 import random
@@ -432,6 +432,19 @@ class ScreenTwo(tk.Frame):
           if b.get():
             self.selection.append(index)
 
+        topEdge = tk.Label(self)
+        topEdge.pack(side='top', fill='x')
+        topEdge.configure(background='spring green')
+        bottomEdge = tk.Label(self, height=2)
+        bottomEdge.pack(side='bottom', fill='x')
+        bottomEdge.configure(background='spring green')
+        rightEdge = tk.Label(self, width=10)
+        rightEdge.pack(side='right', fill='y')
+        rightEdge.configure(background='spring green')
+        leftEdge = tk.Label(self, width=10)
+        leftEdge.pack(side='left', fill='y')
+        leftEdge.configure(background='spring green')
+
         entries = []
         index   = 0
         i, j    = 0, 0
@@ -441,42 +454,52 @@ class ScreenTwo(tk.Frame):
             label.pack(side='top', fill='both', expand=True)
             label.configure(background='spring green')
             self.entriesQtd.append(tk.Entry(self, justify='center'))
-            self.entriesQtd[index].pack(side = 'top', fill='both', expand = True)
+            self.entriesQtd[index].pack(side='top', fill='both', expand=True)
             index += 1
-     
-        getInput = tk.Button(self, width = 20, text = 'Ok', command = self.calcRegimen) # This makes the login button, which will go to the CheckLogin def.
-        getInput.pack(side = 'bottom')
-        getInput.configure(background = 'DarkSeaGreen1')
+
+        getInput = tk.Button(self, width=20, text='OK', command=self.calcRegimen) # This makes the login button, which will go to the CheckLogin def.
+        getInput.pack(side='bottom')
+        getInput.configure(background='DarkSeaGreen1')
+
+        space = tk.Label(self, width=20)
+        space.pack(side='bottom', fill='both', expand=True)
+        space.configure(background='spring green')
 
     def selectFood(self):
         chkbuttons  = []
-        index       = 0
+        index = 0
 
         self.buttonSelect.destroy()
-        self.buttonConfirm = tk.Button(self, width = 20, text = 'Confirm')
+        self.buttonConfirm = tk.Button(self, width=20, text='Confirm')
         self.buttonConfirm['command'] = partial(self.gettingValues, self.controller)
-        self.buttonConfirm.pack(side = 'bottom')
-        self.buttonConfirm.configure(background = 'DarkSeaGreen1')
+        self.buttonConfirm.pack(side='bottom')
+        self.buttonConfirm.configure(background='DarkSeaGreen1')
 
-        self.sbFrame      = tk.Scrollbar(self, orient = "vertical")
-        self.textFrame    = tk.Text(self, width = 15, height = 15, yscrollcommand = self.sbFrame.set)
-        self.sbFrame.config(command = self.textFrame.yview)
-        self.sbFrame.pack(side = "right", fill = "both", expand = False)
-        self.textFrame.pack(side = "left", fill = "both", expand = True)
+        self.space = tk.Label(self, width=20)
+        self.space.pack(side='bottom', fill='both', expand=True)
+        self.space.configure(background='spring green')
+
+        self.sbFrame = tk.Scrollbar(self, orient="vertical")
+        self.textFrame = tk.Text(self, width=20, height=20, yscrollcommand=self.sbFrame.set)
+        self.sbFrame.config(command=self.textFrame.yview)
+        self.sbFrame.pack(side="right", fill="both", expand=False)
+        self.textFrame.pack(side="left", fill="both", expand=True)
+        self.sbFrame.configure(background='DarkSeaGreen1')
+        self.textFrame.configure(background='DarkSeaGreen1')
 
         for i in aux['alimento']:
             self.entriesFood.append(tk.BooleanVar())
-            chkbuttons.append(tk.Checkbutton(self, text = i, variable = self.entriesFood[index], font = ('Helvetica', 8)))
+            chkbuttons.append(tk.Checkbutton(self, text=i, variable=self.entriesFood[index], bg='DarkSeaGreen1', font=('Helvetica', 10)))
             index += 1
 
         for cb in chkbuttons:
-            self.textFrame.window_create("end", window = cb)
+            self.textFrame.window_create("end", window=cb)
             self.textFrame.insert("end", "\n")
 
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
         self.controller = controller
-        self.configure(background = 'spring green')
+        self.configure(background='spring green')
         
         self.entriesFood = []
         self.entriesQtd = []
@@ -499,9 +522,13 @@ class ScreenTwo(tk.Frame):
         labelText.configure(background='spring green')
         labelText.configure(font=("Verdana", 16))
 
-        self.buttonSelect = tk.Button(self, width = 20, text = 'Next', command = self.selectFood)
-        self.buttonSelect.pack(side = 'bottom')
-        self.buttonSelect.configure(background = 'DarkSeaGreen1')
+        space = tk.Label(self, width = 20)
+        space.pack(side='top', fill='both', expand=True)
+        space.configure(background='spring green')
+
+        self.buttonSelect = tk.Button(self, width=20, text='Add Foods', command=self.selectFood)
+        self.buttonSelect.pack(side='bottom')
+        self.buttonSelect.configure(background='DarkSeaGreen1')
     
 # Class related to the third screen of the program
 class ScreenThree(tk.Frame):
